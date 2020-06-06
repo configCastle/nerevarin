@@ -1,0 +1,16 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+wemake-python-styleguide = "*"
+
+[packages]
+aiohttp = "==3.6.2"
+dnspython = "*"
+motor = "==2.1.0"
+pyjwt = "==1.7.1"
+
+[requires]
+python_version = "3.8"
