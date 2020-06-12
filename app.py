@@ -24,10 +24,8 @@ def init_app():
     db = loop.run_until_complete(init_db())
     app['db'] = db
 
-    init_routes(app)
-
     client_uri = os.getenv('CLIENT_URI', '*')
-    aiohttp_cors.setup(app, defaults={
+    cors = aiohttp_cors.setup(app, defaults={
         client_uri: aiohttp_cors.ResourceOptions(
             expose_headers='*',
             allow_headers='*',
@@ -35,6 +33,8 @@ def init_app():
             allow_methods=['POST', 'GET', 'OPTIONS'],
         ),
     })
+
+    init_routes(app, cors)
 
     return app
 
