@@ -1,6 +1,5 @@
 """Views for project."""
 from datetime import datetime, timedelta
-from time import mktime
 
 import jwt
 from aiohttp import web
@@ -46,11 +45,11 @@ async def register(request):
             status=web.HTTPBadRequest.status_code,
         )
 
-    payload_acess = {
+    payload_access = {
         'user_id': user_id,
         'exp': datetime.utcnow() + timedelta(minutes=JWT_EXP_DELTA_MINUTES),
     }
-    acess_token = jwt.encode(payload_acess, JWT_SECRET, JWT_ALGORITHM)
+    access_token = jwt.encode(payload_access, JWT_SECRET, JWT_ALGORITHM)
 
     payload_refresh = {
         'user_id': user_id,
@@ -73,7 +72,7 @@ async def register(request):
         {
             'id': user_id,
             'login': user['login'],
-            'acessToken': acess_token.decode('utf-8'),
+            'accessToken': access_token.decode('utf-8'),
             'refresToekn': refresh_token.decode('utf-8'),
             'expires_in': int(expires_in.timestamp()),
         },
