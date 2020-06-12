@@ -1,0 +1,2 @@
+[flake8]
+per-file-ignores = security.py: WPS226,views.py: WPS226,WPS210
