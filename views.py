@@ -1,17 +1,11 @@
 """Views for project."""
-from datetime import datetime, timedelta
-
 import jwt
 from aiohttp import web
 
-from constants import (
-    JWT_ALGORITHM,
-    JWT_EXP_DELTA_DAYS,
-    JWT_EXP_DELTA_MINUTES,
-    JWT_SECRET,
-)
+from constants import JWT_ALGORITHM, JWT_SECRET
 from security import generate_password_hash
 from utils.db import return_all_users_login, return_last_id
+from utils.token import generate_tokens
 
 
 async def register(request):
@@ -37,6 +31,8 @@ async def register(request):
             status=web.HTTPUnauthorized.status_code,
         )
 
+    access_token, refresh_token, expires_in = await generate_tokens(user_id)
+
     if len(user['password']) < 8:
         return web.json_response(
             {
@@ -44,18 +40,6 @@ async def register(request):
             },
             status=web.HTTPBadRequest.status_code,
         )
-
-    payload_access = {
-        'user_id': user_id,
-        'exp': datetime.utcnow() + timedelta(minutes=JWT_EXP_DELTA_MINUTES),
-    }
-    access_token = jwt.encode(payload_access, JWT_SECRET, JWT_ALGORITHM)
-
-    payload_refresh = {
-        'user_id': user_id,
-        'exp': datetime.utcnow() + timedelta(days=JWT_EXP_DELTA_DAYS),
-    }
-    refresh_token = jwt.encode(payload_refresh, JWT_SECRET, JWT_ALGORITHM)
 
     await db.user.insert_one(
         {
@@ -66,21 +50,19 @@ async def register(request):
         },
     )
 
-    expires_in = datetime.utcnow() + timedelta(minutes=JWT_EXP_DELTA_MINUTES)
-
     return web.json_response(
         {
             'id': user_id,
             'login': user['login'],
             'accessToken': access_token.decode('utf-8'),
             'refresToekn': refresh_token.decode('utf-8'),
-            'expires_in': int(expires_in.timestamp()),
+            'expires_in': expires_in,
         },
         status=web.HTTPCreated.status_code,
     )
 
 
-async def refresh_token(request):
+async def new_tokens(request):
     """
     Refresh token for auth.
 
@@ -90,8 +72,57 @@ async def refresh_token(request):
     Returns:
         New tokens
     """
+    db = request.app['db']
+    body = await request.json()
+
+    try:
+        payload = jwt.decode(
+            body['token'], JWT_SECRET, algorithms=[JWT_ALGORITHM],
+        )
+    except jwt.DecodeError:
+        return web.json_response(
+            {
+                'error': 'Token in request is invalid',
+            },
+            status=web.HTTPBadRequest.status_code,
+        )
+    except jwt.ExpiredSignatureError:
+        return web.json_response(
+            {
+                'error': 'Token in request is expired',
+            },
+            status=web.HTTPUnauthorized.status_code,
+        )
+
+    database_data = await db.user.find_one(
+        {'id': payload['user_id']},
+        {'_id': 0, 'refresh_token': 1, 'id': 1, 'login': 1},
+    )
+
+    if database_data['refresh_token'] != body['token']:
+        web.json_response(
+            {
+                'error': "Token don't match",
+            },
+            status=web.HTTPUnauthorized.status_code,
+        )
+
+    access_token, refresh_token, expires_in = await generate_tokens(
+        database_data['id'],
+    )
+
+    await db.user.update_one(
+        {'id': payload['user_id']},
+        {'$set': {'refresh_token': refresh_token.decode('utf-8')}},
+    )
+
     return web.json_response(
         {
-            'message': 'OK',
-        }
+            'id': database_data['id'],
+            'login': database_data['login'],
+            'accessToken': access_token.decode('utf-8'),
+            'refreshToken': refresh_token.decode('utf-8'),
+            'expires_in': expires_in,
+        },
+        status=web.HTTPOk.status_code,
     )
