@@ -78,3 +78,20 @@ async def register(request):
         },
         status=web.HTTPCreated.status_code,
     )
+
+
+async def refresh_token(request):
+    """
+    Refresh token for auth.
+
+    Args:
+        request: instance of request from client
+
+    Returns:
+        New tokens
+    """
+    return web.json_response(
+        {
+            'message': 'OK',
+        }
+    )
