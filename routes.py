@@ -15,5 +15,5 @@ def init_routes(app, cors):
     )
 
     cors.add(
-        app.router.add_route('GET', '/refresh-token', views.new_tokens),
+        app.router.add_route('POST', '/refresh-token', views.new_tokens),
     )
