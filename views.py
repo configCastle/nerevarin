@@ -55,7 +55,7 @@ async def register(request):
             'id': user_id,
             'login': user['login'],
             'accessToken': access_token.decode('utf-8'),
-            'refresToekn': refresh_token.decode('utf-8'),
+            'refreshToken': refresh_token.decode('utf-8'),
             'expires_in': expires_in,
         },
         status=web.HTTPCreated.status_code,
