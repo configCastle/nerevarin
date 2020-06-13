@@ -13,3 +13,7 @@ def init_routes(app, cors):
     cors.add(
         app.router.add_route('POST', '/signup', views.register),
     )
+
+    cors.add(
+        app.router.add_route('GET', '/refresh-token', views.new_tokens),
+    )
