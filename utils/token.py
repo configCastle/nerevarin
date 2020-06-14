@@ -37,3 +37,18 @@ async def generate_tokens(user_id):
     expires_in = int(expires_in.timestamp())
 
     return access_token, refresh_token, expires_in
+
+
+async def update_token(db, user_id, refresh_token):
+    """
+    Update refresh token.
+
+    Args:
+        db: instance of database
+        user_id: id of user for update token
+        refresh_token: token which write in bd
+    """
+    await db.user.update_one(
+        {'id': user_id},
+        {'$set': {'refresh_token': refresh_token.decode('utf-8')}},
+    )

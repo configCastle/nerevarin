@@ -17,3 +17,7 @@ def init_routes(app, cors):
     cors.add(
         app.router.add_route('POST', '/refresh-token', views.new_tokens),
     )
+
+    cors.add(
+        app.router.add_route('POST', '/auth', views.login),
+    )
