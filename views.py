@@ -157,7 +157,8 @@ async def login(request):
         )
 
     user = await db.user.find_one(
-        {'login': request_user['login']}, {'_id': 0, 'id': 1, 'pw_hash': 1},
+        {'login': request_user['login']},
+        {'_id': 0, 'id': 1, 'pw_hash': 1, 'login': 1},
     )
 
     if user is None:
