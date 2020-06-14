@@ -1,11 +1,13 @@
 """Views for project."""
+import json
+
 import jwt
 from aiohttp import web
 
 from constants import JWT_ALGORITHM, JWT_SECRET
-from security import generate_password_hash
+from security import generate_password_hash, match_password
 from utils.db import return_all_users_login, return_last_id
-from utils.token import generate_tokens
+from utils.token import generate_tokens, update_token
 
 
 async def register(request):
@@ -111,15 +113,77 @@ async def new_tokens(request):
         database_data['id'],
     )
 
-    await db.user.update_one(
-        {'id': payload['user_id']},
-        {'$set': {'refresh_token': refresh_token.decode('utf-8')}},
-    )
+    update_token(db, payload['user_id'], refresh_token)
 
     return web.json_response(
         {
             'id': database_data['id'],
             'login': database_data['login'],
+            'accessToken': access_token.decode('utf-8'),
+            'refreshToken': refresh_token.decode('utf-8'),
+            'expires_in': expires_in,
+        },
+        status=web.HTTPOk.status_code,
+    )
+
+
+async def login(request):
+    """
+    Login exists user.
+
+    Args:
+        request: instance of request from client
+
+    Returns:
+        information about auth user and new tokens
+    """
+    db = request.app['db']
+
+    try:
+        request_user = await request.json()
+        if not request_user['login'] or not request_user['password']:
+            return web.json_response(
+                {
+                    'error': 'Invalid user',
+                },
+                status=web.HTTPBadRequest.status_code,
+            )
+    except (json.decoder.JSONDecodeError, KeyError):
+        return web.json_response(
+            {
+                'error': 'Invalid user',
+            },
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    user = await db.user.find_one(
+        {'login': request_user['login']}, {'_id': 0, 'id': 1, 'pw_hash': 1},
+    )
+
+    if user is None:
+        return web.json_response(
+            {
+                'error': 'Invalid user',
+            },
+            status=web.HTTPUnauthorized.status_code,
+        )
+
+    if not match_password(user['pw_hash'], request_user['password']):
+        return web.json_response(
+            {
+                'error': 'Invalid user',
+            },
+            status=web.HTTPUnauthorized.status_code,
+        )
+
+    access_token, refresh_token, expires_in = await generate_tokens(user['id'])
+
+    update_token(db, user['id'], refresh_token)
+
+    return web.json_response(
+        {
+            'id': user['id'],
+            'login': user['login'],
             'accessToken': access_token.decode('utf-8'),
             'refreshToken': refresh_token.decode('utf-8'),
             'expires_in': expires_in,
