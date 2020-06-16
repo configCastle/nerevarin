@@ -102,7 +102,7 @@ async def new_tokens(request):
     )
 
     if database_data['refresh_token'] != body['token']:
-        web.json_response(
+        return web.json_response(
             {
                 'error': "Token don't match",
             },
@@ -113,7 +113,7 @@ async def new_tokens(request):
         database_data['id'],
     )
 
-    update_token(db, payload['user_id'], refresh_token)
+    await update_token(db, payload['user_id'], refresh_token)
 
     return web.json_response(
         {
