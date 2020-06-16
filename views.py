@@ -179,7 +179,7 @@ async def login(request):
 
     access_token, refresh_token, expires_in = await generate_tokens(user['id'])
 
-    update_token(db, user['id'], refresh_token)
+    await update_token(db, user['id'], refresh_token)
 
     return web.json_response(
         {
