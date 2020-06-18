@@ -11,6 +11,8 @@ aiohttp = "==3.6.2"
 dnspython = "*"
 motor = "==2.1.0"
 pyjwt = "==1.7.1"
+bcrypt = "*"
+aiohttp-cors = "*"
 
 [requires]
 python_version = "3.8"
