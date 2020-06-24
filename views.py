@@ -1,5 +1,5 @@
 """Views for project."""
-import json
+from json.decoder import JSONDecodeError
 
 import jwt
 from aiohttp import web
@@ -148,7 +148,7 @@ async def login(request):
                 },
                 status=web.HTTPBadRequest.status_code,
             )
-    except (json.decoder.JSONDecodeError, KeyError):
+    except (JSONDecodeError, KeyError):
         return web.json_response(
             {
                 'error': 'Invalid user',
