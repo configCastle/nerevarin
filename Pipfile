@@ -10,7 +10,7 @@ wemake-python-styleguide = "*"
 aiohttp = "==3.6.2"
 dnspython = "*"
 motor = "==2.1.0"
-pyjwt = "==1.7.1"
+pyjwt = "==2.4.0"
 bcrypt = "*"
 aiohttp-cors = "*"
 
